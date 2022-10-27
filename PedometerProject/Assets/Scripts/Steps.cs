@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using TMPro;
 
 public class Steps : MonoBehaviour
 {
-    [SerializeField] Text stepDisplayText;
+    [SerializeField] TextMeshProUGUI stepDisplayText, workingDisplay;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,9 +16,12 @@ public class Steps : MonoBehaviour
         {
             Permission.RequestUserPermission("android.permission.ACTIVITY_RECOGNITION");
         }
- 
-        InputSystem.EnableDevice(StepCounter.current);
         */
+        InputSystem.EnableDevice(StepCounter.current);
+        if(StepCounter.current.enabled){
+            workingDisplay.text = "Working: True";
+        }
+        
     }
 
     // Update is called once per frame
@@ -25,7 +29,7 @@ public class Steps : MonoBehaviour
     {
         if(StepCounter.current.enabled)
         {
-            stepDisplayText.text = $"Steps: {StepCounter.current.stepCounter.ReadValue()}";
+            stepDisplayText.text = ($"Steps: {StepCounter.current.stepCounter.ReadValue()}");
         }
     }
 }
