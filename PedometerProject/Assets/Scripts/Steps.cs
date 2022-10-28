@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Android;
 
 public class Steps : MonoBehaviour
 {
@@ -11,12 +12,12 @@ public class Steps : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        /*
+        
         if (!Permission.HasUserAuthorizedPermission("android.permission.ACTIVITY_RECOGNITION"))
         {
             Permission.RequestUserPermission("android.permission.ACTIVITY_RECOGNITION");
         }
-        */
+        
         InputSystem.EnableDevice(StepCounter.current);
         if(StepCounter.current.enabled){
             workingDisplay.text = "Working: True";
