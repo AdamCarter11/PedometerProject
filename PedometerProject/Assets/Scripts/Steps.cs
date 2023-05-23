@@ -11,21 +11,20 @@ public class Steps : MonoBehaviour
 {
     
     [SerializeField] TextMeshProUGUI stepDisplayText, workingDisplay, dateDisplay, versionText;
-    float lastStepVal;
     DateTime currTime;
-    DateTime startTime; 
     int lastSteps = 0;
-    [HideInInspector] public static int totalSteps;
-    // Start is called before the first frame update
+    [HideInInspector] public static int totalSteps; // this is public so we can access it from other scripts if needed
+    bool delayed = true;
+
     void Start()
     {
-        print(PlayerPrefs.GetString("timeSaved"));
+        // request permissions to use step counter on phone if it hasn't be approved yet
         if (!Permission.HasUserAuthorizedPermission("android.permission.ACTIVITY_RECOGNITION"))
         {
             Permission.RequestUserPermission("android.permission.ACTIVITY_RECOGNITION");
-            //
         }
         
+        // enables step counter once it's been approved and sets laststeps if it doesn't have a value yet
         InputSystem.EnableDevice(StepCounter.current);
         if(StepCounter.current.enabled){
             workingDisplay.text = "Working: True";
@@ -34,47 +33,62 @@ public class Steps : MonoBehaviour
             }
         }
         
+        // saves the time saved as a baseline to compare when a new day has passed
         if(!PlayerPrefs.HasKey("timeSaved")){
             currTime = DateTime.Now;
-            //print(currTime);
             PlayerPrefs.SetString("timeSaved", currTime.ToString());
-
-            //used for reseting steps at beginning of each day
-            /*
-            if(StepCounter.current.enabled){
-                lastStepVal = StepCounter.current.stepCounter.ReadValue();
-                PlayerPrefs.SetInt("lastSteps", (int)lastStepVal);
-            }
-            */
         }
+
+        // adding this delayed start to see if it gives the app time to pick up the android permissions + steps
+        StartCoroutine(delayedStart());
+    }
+
+    IEnumerator delayedStart()
+    {
+        yield return new WaitForSeconds(.2f);
+        delayed = false;
     }
 
     private void Update() {
-        
-        if(StepCounter.current.enabled)
+        // everything relying on steps should be below this check
+        if (delayed) return;
+
+        // gets steps from the android pedometer and displays them in a text box
+        calculateStepsFunc();
+
+        // resets steps on each new day
+        resetStepsFunc();
+    }
+
+    void calculateStepsFunc()
+    {
+        if (StepCounter.current.enabled)
         {
             int tempSteps = PlayerPrefs.GetInt("lastSteps");
-            if(tempSteps <= 0){
+            if (tempSteps <= 0)
+            {
                 tempSteps = 0;
                 PlayerPrefs.SetInt("lastSteps", 0);
             }
-            
+
+            // tempSteps is the steps up to this point and is used to reset total steps for each day
+            //Android doesn't reset the pedometer until the phones been reset
             totalSteps = StepCounter.current.stepCounter.ReadValue() - tempSteps;
             stepDisplayText.text = ($"Steps: {totalSteps}");
         }
+    }
 
+    void resetStepsFunc()
+    {
         string originTime = PlayerPrefs.GetString("timeSaved");
-        int lastStepVar = PlayerPrefs.GetInt("lastSteps");
-        dateDisplay.text = "origin time: " + originTime + " last steps: " + lastStepVar;
-        versionText.text = DateTime.Now.ToString();
-        if(DateTime.Now.ToString()[3] != originTime[3] || DateTime.Now.ToString()[4] != originTime[4]){
-            //reset steps
+        if (DateTime.Now.Date != DateTime.Parse(originTime).Date)
+        {
+            // saves the current steps on a new day which will then be subtracted from all future days (on a new day, it should start at 0 because steps-steps = 0)
             lastSteps = StepCounter.current.stepCounter.ReadValue();
             PlayerPrefs.SetInt("lastSteps", lastSteps);
 
-            //new day (and save time)
+            // new day (and save time)
             currTime = DateTime.Now;
-            //print(currTime);
             PlayerPrefs.SetString("timeSaved", currTime.ToString());
         }
     }
